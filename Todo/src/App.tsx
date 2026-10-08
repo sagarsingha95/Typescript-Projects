@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 import TaskItem from "./components/TaskItem";
 import type { Task } from "./types/task";
+
 
 const App = () => {
   const [tasks, setTasks] = useState<Task[]>([
@@ -21,9 +22,10 @@ const App = () => {
     },
   ]);
   const [title, setTitle] = useState<string>("");
-  // const [completed,setCompleted] =useState<boolean>(false);
+  const ref = useRef<HTMLInputElement>(null);
 
-  function handleAdd(e:React.FormEvent<HTMLFormElement>) {
+
+  function handleAdd(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (title.trim() === "") {
       alert("Please add a todo first");
@@ -36,6 +38,7 @@ const App = () => {
     };
     setTasks([...tasks, x]);
     setTitle("");
+    ref.current?.focus();
   }
 
   function handleCompleted(id: number) {
@@ -48,24 +51,39 @@ const App = () => {
 
   function handleDelete(id: number) {
     setTasks(tasks.filter((x) => x.id !== id));
+    ref.current?.focus();
   }
   const completedTask = () =>
     tasks.filter((item) => item.completed === true).length;
   const pendingTask = () =>
     tasks.filter((item) => item.completed === false).length;
 
+  function handleChange(e:ChangeEvent<HTMLInputElement>){
+    setTitle(e.target.value);
+  };
+  function handleKeyDown(e:KeyboardEvent<HTMLInputElement>){
+    console.log(e.key);
+    if(e.key === "Escape"){
+      setTitle("");
+    };
+  };
+
+  function handleClear(){
+    setTasks([]);
+  }
+
   return (
-    <div>
+    <div className="p-4">
       <form onSubmit={handleAdd}>
         <input
           type="text"
-          onChange={(e) => {
-            setTitle(e.target.value);
-          }}
+          onChange={handleChange}
           value={title}
-          className="border-2 rounded-2xl"
+          onKeyDown={handleKeyDown}
+          className="shadow-2xs p-2 focus:outline-none"
+          ref={ref}
         />
-        <button type="submit" className="border-2 p-2">
+        <button type="submit" className="bg-blue-500 p-2 rounded-xs ml-4 cursor-pointer active:translate-y-1 " >
           Submit
         </button>
       </form>
@@ -86,6 +104,7 @@ const App = () => {
       <p>Completed Task: {completedTask()}</p>
       <p>Pending Task: {pendingTask()}</p>
       <p>Total Task: {tasks.length}</p>
+      <button className="p-2 bg-stone-400" onClick={handleClear}>Clear All</button>
     </div>
   );
 };
