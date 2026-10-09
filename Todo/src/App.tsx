@@ -1,27 +1,29 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent} from "react";
 import TaskItem from "./components/TaskItem";
 import type { Task } from "./types/task";
+import useLocalStorage from "./hooks/useLocalStorage";
 
+
+
+function isTask(value:unknown):value is Task{
+  if(typeof value !== "object" || value === null){
+    return false
+  }
+  return (
+    "id" in value &&
+    typeof value.id === "number" &&
+    "title" in value &&
+    typeof value.title === "string" &&
+    "completed" in value &&
+    typeof value.completed === "boolean"
+  );
+}
 
 const App = () => {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "Wake up",
-      completed: true,
-    },
-    {
-      id: 2,
-      title: "Breakfast",
-      completed: true,
-    },
-    {
-      id: 3,
-      title: "Go to work",
-      completed: false,
-    },
-  ]);
+  const [tasks, setTasks] = useLocalStorage<Task[]>("tasks",[],(value): value is Task[]=>Array.isArray(value)&& value.every(isTask));
   const [title, setTitle] = useState<string>("");
+
+
   const ref = useRef<HTMLInputElement>(null);
 
 
@@ -32,14 +34,18 @@ const App = () => {
       return;
     }
     const x: Task = {
-      id: tasks.length + 1,
+      id: Date.now(),
       title: title.trim(),
       completed: false,
     };
-    setTasks([...tasks, x]);
+    setTasks([...tasks,x]);
+
+    console.log(localStorage.getItem("tasks"));
     setTitle("");
     ref.current?.focus();
   }
+
+
 
   function handleCompleted(id: number) {
     setTasks(
@@ -61,16 +67,28 @@ const App = () => {
   function handleChange(e:ChangeEvent<HTMLInputElement>){
     setTitle(e.target.value);
   };
-  function handleKeyDown(e:KeyboardEvent<HTMLInputElement>){
-    console.log(e.key);
-    if(e.key === "Escape"){
-      setTitle("");
-    };
-  };
 
-  function handleClear(){
-    setTasks([]);
-  }
+  function handleClear() {
+  setTasks([]);
+}
+
+  useEffect(()=>{
+    document.title = `Todo - ${tasks.length} list`;
+  },[tasks])
+
+
+
+
+
+  // useEffect(()=>{
+  //   const x = setInterval(()=>{
+  //     console.log("Hello");
+  //   },1000)
+
+  //   return () =>{
+  //     clearInterval(x);  
+  //   }
+  // },[])
 
   return (
     <div className="p-4">
@@ -79,7 +97,6 @@ const App = () => {
           type="text"
           onChange={handleChange}
           value={title}
-          onKeyDown={handleKeyDown}
           className="shadow-2xs p-2 focus:outline-none"
           ref={ref}
         />
