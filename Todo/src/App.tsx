@@ -1,13 +1,21 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent} from "react";
-import TaskItem from "./components/TaskItem";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import type { Task } from "./types/task";
 import useLocalStorage from "./hooks/useLocalStorage";
+import TaskList from "./components/TaskList";
+import FormSubmission from "./components/FormSubmission";
+import TaskStats from "./components/Taskstats";
+import Card from "./components/Card";
+import { Section } from "./components/Section";
 
-
-
-function isTask(value:unknown):value is Task{
-  if(typeof value !== "object" || value === null){
-    return false
+function isTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null) {
+    return false;
   }
   return (
     "id" in value &&
@@ -20,14 +28,16 @@ function isTask(value:unknown):value is Task{
 }
 
 const App = () => {
-  const [tasks, setTasks] = useLocalStorage<Task[]>("tasks",[],(value): value is Task[]=>Array.isArray(value)&& value.every(isTask));
+  const [tasks, setTasks] = useLocalStorage<Task[]>(
+    "tasks",
+    [],
+    (value): value is Task[] => Array.isArray(value) && value.every(isTask),
+  );
   const [title, setTitle] = useState<string>("");
-
 
   const ref = useRef<HTMLInputElement>(null);
 
-
-  function handleAdd(e:FormEvent<HTMLFormElement>) {
+  function handleAdd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (title.trim() === "") {
       alert("Please add a todo first");
@@ -38,14 +48,12 @@ const App = () => {
       title: title.trim(),
       completed: false,
     };
-    setTasks([...tasks,x]);
+    setTasks([...tasks, x]);
 
     console.log(localStorage.getItem("tasks"));
     setTitle("");
     ref.current?.focus();
   }
-
-
 
   function handleCompleted(id: number) {
     setTasks(
@@ -61,24 +69,21 @@ const App = () => {
   }
   const completedTask = () =>
     tasks.filter((item) => item.completed === true).length;
+
   const pendingTask = () =>
     tasks.filter((item) => item.completed === false).length;
 
-  function handleChange(e:ChangeEvent<HTMLInputElement>){
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
     setTitle(e.target.value);
-  };
+  }
 
   function handleClear() {
-  setTasks([]);
-}
+    setTasks([]);
+  }
 
-  useEffect(()=>{
+  useEffect(() => {
     document.title = `Todo - ${tasks.length} list`;
-  },[tasks])
-
-
-
-
+  }, [tasks]);
 
   // useEffect(()=>{
   //   const x = setInterval(()=>{
@@ -86,42 +91,44 @@ const App = () => {
   //   },1000)
 
   //   return () =>{
-  //     clearInterval(x);  
+  //     clearInterval(x);
   //   }
   // },[])
 
   return (
-    <div className="p-4">
-      <form onSubmit={handleAdd}>
-        <input
-          type="text"
-          onChange={handleChange}
-          value={title}
-          className="shadow-2xs p-2 focus:outline-none"
+    <div className="p-4 ">
+      <Card>
+        <FormSubmission
+          title={title}
+          handleChange={handleChange}
+          handleAdd={handleAdd}
           ref={ref}
         />
-        <button type="submit" className="bg-blue-500 p-2 rounded-xs ml-4 cursor-pointer active:translate-y-1 " >
-          Submit
-        </button>
-      </form>
+      </Card>
+      <Section title={"My task"}>
+          <p>Learn React with TypeScript.</p>
+  <p>Practice building projects.</p>
+      </Section>
+      <div>
+        {
+          <TaskList
+            tasks={tasks}
+            handleCompleted={handleCompleted}
+            handleDelete={handleDelete}
+          />
+        }
+      </div>
+        <Card>
 
-      {tasks.map((item) => (
-        <ul key={item.id}>
-          <li>
-            {
-              <TaskItem
-                task={item}
-                handleCompleted={handleCompleted}
-                handleDelete={handleDelete}
-              />
-            }
-          </li>
-        </ul>
-      ))}
-      <p>Completed Task: {completedTask()}</p>
-      <p>Pending Task: {pendingTask()}</p>
-      <p>Total Task: {tasks.length}</p>
-      <button className="p-2 bg-stone-400" onClick={handleClear}>Clear All</button>
+      <TaskStats
+        total={tasks.length}
+        completed={completedTask}
+        pending={pendingTask}
+      />
+        </Card>
+      <button className="p-2 bg-stone-400" onClick={handleClear}>
+        Clear All
+      </button>
     </div>
   );
 };
