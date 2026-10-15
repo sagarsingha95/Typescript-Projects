@@ -14,6 +14,7 @@ import Card from "./components/Card";
 import { Section } from "./components/Section";
 import { useReducer } from "react";
 import { taskReducer,loadTask } from "./reducers/taskReducer";
+import { useTheme } from "./context/ThemeContext";
 
 // function isTask(value: unknown): value is Task {
 //   if (typeof value !== "object" || value === null) {
@@ -37,6 +38,7 @@ const App = () => {
   // );
   const [title, setTitle] = useState<string>("");
   const [tasks,dispatch] = useReducer(taskReducer,undefined,loadTask);
+  const {theme,toggleTheme} = useTheme();
 
   const ref = useRef<HTMLInputElement>(null);
 
@@ -88,6 +90,12 @@ const App = () => {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }, [tasks]);
 
+  useEffect(()=>{
+    document.body.style.background = `${theme === "light"? "black":"white"}`;
+    document.body.style.color = `${theme === "light"? "white":"black"}`;
+    
+  },[theme])
+
   // useEffect(()=>{
   //   const x = setInterval(()=>{
   //     console.log("Hello");
@@ -99,7 +107,12 @@ const App = () => {
   // },[])
 
   return (
-    <div className="p-4 ">
+    <div className={`min-h-screen p-4 transition-colors duration-300 ${
+    theme === "light"
+      ? "bg-white text-gray-900"
+      : "bg-gray-900 text-white"
+  }`}>
+      <button className={theme === "light" ? "p-2 bg-stone-700 shadow-2xl":"p-2 bg-stone-300 shadow-2xl"} onClick={toggleTheme}>{theme === "light"? "DarkMode" : "LightMode"}</button>
       <Card>
         <FormSubmission
           title={title}
