@@ -6,34 +6,37 @@ import {
   type FormEvent,
 } from "react";
 import type { Task } from "./types/task";
-import useLocalStorage from "./hooks/useLocalStorage";
+// import useLocalStorage from "./hooks/useLocalStorage";
 import TaskList from "./components/TaskList";
 import FormSubmission from "./components/FormSubmission";
 import TaskStats from "./components/Taskstats";
 import Card from "./components/Card";
 import { Section } from "./components/Section";
+import { useReducer } from "react";
+import { taskReducer,loadTask } from "./reducers/taskReducer";
 
-function isTask(value: unknown): value is Task {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  return (
-    "id" in value &&
-    typeof value.id === "number" &&
-    "title" in value &&
-    typeof value.title === "string" &&
-    "completed" in value &&
-    typeof value.completed === "boolean"
-  );
-}
+// function isTask(value: unknown): value is Task {
+//   if (typeof value !== "object" || value === null) {
+//     return false;
+//   }
+//   return (
+//     "id" in value &&
+//     typeof value.id === "number" &&
+//     "title" in value &&
+//     typeof value.title === "string" &&
+//     "completed" in value &&
+//     typeof value.completed === "boolean"
+//   );
+// }
 
 const App = () => {
-  const [tasks, setTasks] = useLocalStorage<Task[]>(
-    "tasks",
-    [],
-    (value): value is Task[] => Array.isArray(value) && value.every(isTask),
-  );
+  // const [tasks, setTasks] = useLocalStorage<Task[]>(
+  //   "tasks",
+  //   [],
+  //   (value): value is Task[] => Array.isArray(value) && value.every(isTask),
+  // );
   const [title, setTitle] = useState<string>("");
+  const [tasks,dispatch] = useReducer(taskReducer,undefined,loadTask);
 
   const ref = useRef<HTMLInputElement>(null);
 
@@ -48,7 +51,7 @@ const App = () => {
       title: title.trim(),
       completed: false,
     };
-    setTasks([...tasks, x]);
+    dispatch({type:"ADD_TASK",payload:x})
 
     console.log(localStorage.getItem("tasks"));
     setTitle("");
@@ -56,15 +59,11 @@ const App = () => {
   }
 
   function handleCompleted(id: number) {
-    setTasks(
-      tasks.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item,
-      ),
-    );
+    dispatch({type:"TOGGLE_TASK",payload:id})
   }
 
   function handleDelete(id: number) {
-    setTasks(tasks.filter((x) => x.id !== id));
+    dispatch({type:"DELETE_TASK",payload:id})
     ref.current?.focus();
   }
   const completedTask = () =>
@@ -78,12 +77,16 @@ const App = () => {
   }
 
   function handleClear() {
-    setTasks([]);
+    dispatch({type:"CLEAR_TASKS"})
   }
 
   useEffect(() => {
     document.title = `Todo - ${tasks.length} list`;
   }, [tasks]);
+
+  useEffect(() => {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}, [tasks]);
 
   // useEffect(()=>{
   //   const x = setInterval(()=>{
@@ -129,6 +132,7 @@ const App = () => {
       <button className="p-2 bg-stone-400" onClick={handleClear}>
         Clear All
       </button>
+      <button className="p-2 bg-green-500" onClick={()=>dispatch({type:"MARK_ALL_COMPLETE"})}>Complete ALL</button>
     </div>
   );
 };
